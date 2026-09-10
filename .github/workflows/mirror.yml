@@ -44,11 +44,11 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Release APK (Universal)
-        run: ./gradlew assembleRelease --no-daemon
+      - name: Build Release APK (ARM64 Only)
+        run: ./gradlew assembleArm64Release --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: CherryGram-Release-APK
-          path: '**/build/outputs/apk/release/*.apk'
+          path: '**/build/outputs/apk/arm64/release/*.apk'
