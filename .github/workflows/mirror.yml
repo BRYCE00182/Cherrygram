@@ -1,4 +1,4 @@
-name: Build CherryGram Release
+name: Build CherryGram via Docker
 
 on:
   workflow_dispatch:
@@ -6,8 +6,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    env:
-      ORG_GRADLE_JVMARGS: "-Xmx6g -Xss32m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -15,19 +13,7 @@ jobs:
           submodules: recursive
           fetch-depth: 1
 
-      - name: Setup Java
-        uses: actions/setup-java@v3
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'gradle'
-
-      - name: Install Build Tools
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y yasm nasm ninja-build build-essential perl python3 pkg-config libtool gperf libltdl-dev
-
-      - name: Prepare Configuration Files
+      - name: Setup API Keys & Config
         run: |
           mkdir -p TMessagesProj/src/main/java/uz/unnarsx/cherrygram
           cat << 'EOF' > TMessagesProj/src/main/java/uz/unnarsx/cherrygram/Extra.kt
@@ -38,17 +24,27 @@ jobs:
               const val APP_HASH = "${{ secrets.APP_HASH }}"
           }
           EOF
-          
           cp secrets_for_ci.env.example secrets_for_ci.env
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Build Docker Image and Compile APK
+        run: |
+          # 1. Repo ke Dockerfile se image build karo
+          docker build -t cherrygram-env .
 
-      - name: Build Release APK (ARM64 Only)
-        run: ./gradlew assembleArm64Release --no-daemon
+          # 2. Container run karke arm64 APK compile karo
+          docker run --name temp-builder cherrygram-env ./gradlew assembleArm64Release --no-daemon
+
+      - name: Extract APK from Docker Container
+        run: |
+          mkdir -p extracted-apk
+          # 3. Container ke andar bani APK ko bahar nikal lo
+          docker cp temp-builder:/app/TMessagesProj/build/outputs/apk/arm64/release/ ./extracted-apk/ || \
+          docker cp temp-builder:/workspace/TMessagesProj/build/outputs/apk/arm64/release/ ./extracted-apk/ || true
+          
+          ls -R extracted-apk/
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: CherryGram-Release-APK
-          path: '**/build/outputs/apk/arm64/release/*.apk'
+          name: CherryGram-Docker-APK
+          path: extracted-apk/**/*.apk
