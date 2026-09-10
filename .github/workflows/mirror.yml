@@ -29,12 +29,10 @@ jobs:
           sudo rm -rf /usr/share/dotnet/ /usr/local/graalvm/ /usr/local/lib/node_modules
           df -h
 
-      - name: Create and Setup Extra.kt
+      - name: Prepare Configuration Files
         run: |
-          # 1. Exact folder create karega
+          # 1. Extra.kt (API Keys) File Banao
           mkdir -p TMessagesProj/src/main/java/uz/unnarsx/cherrygram
-          
-          # 2. Ekdum nayi Extra.kt file banakar usme Kotlin code aur API keys inject karega
           cat << 'EOF' > TMessagesProj/src/main/java/uz/unnarsx/cherrygram/Extra.kt
           package uz.unnarsx.cherrygram
 
@@ -44,7 +42,10 @@ jobs:
           }
           EOF
           
-          echo "Extra.kt file successfully created!"
+          # 2. CI Secrets File Copy Karo (Error Fix)
+          cp secrets_for_ci.env.example secrets_for_ci.env
+          
+          echo "All configuration files setup successfully!"
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
