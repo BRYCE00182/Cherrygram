@@ -26,14 +26,13 @@ jobs:
           EOF
           cp secrets_for_ci.env.example secrets_for_ci.env
 
-      - name: Build Docker Image and Compile APK
-        run: |
-          # 1. Build Docker image including the current directory files
-          docker build -t cherrygram-env .
+      - name: Build Docker Image
+        run: docker build -t cherrygram-env .
 
-          # 2. Run container overriding the default entrypoint to use bash directly
-          docker run --name temp-builder --entrypoint /bin/bash cherrygramendt cherrygram-env -c "cd /workspace || cd /app || cd /home/gradle && ./gradlew assembleArm64Release --no-daemon" || \
-          docker run --name temp-builder --entrypoint bash cherrygram-env -c "./gradlew assembleArm64Release --no-daemon"
+      - name: Run Build inside Container
+        run: |
+          # Typo fix kar diya hai (cherrygramendt -> cherrygram-env)
+          docker run --name temp-builder --entrypoint /bin/bash cherrygram-env -c "cd /app || cd /workspace || cd /home/gradle; ./gradlew assembleArm64Release --no-daemon"
 
       - name: Extract APK from Docker Container
         run: |
@@ -41,7 +40,6 @@ jobs:
           docker cp temp-builder:/app/TMessagesProj/build/outputs/apk/arm64/release/ ./extracted-apk/ || \
           docker cp temp-builder:/workspace/TMessagesProj/build/outputs/apk/arm64/release/ ./extracted-apk/ || \
           docker cp temp-builder:/home/gradle/TMessagesProj/build/outputs/apk/arm64/release/ ./extracted-apk/ || true
-          
           ls -R extracted-apk/
 
       - name: Upload APK
