@@ -28,18 +28,19 @@ jobs:
 
       - name: Build Docker Image and Compile APK
         run: |
-          # 1. Repo ke Dockerfile se image build karo
+          # 1. Build Docker image including the current directory files
           docker build -t cherrygram-env .
 
-          # 2. Container run karke arm64 APK compile karo
-          docker run --name temp-builder cherrygram-env ./gradlew assembleArm64Release --no-daemon
+          # 2. Run container overriding the default entrypoint to use bash directly
+          docker run --name temp-builder --entrypoint /bin/bash cherrygramendt cherrygram-env -c "cd /workspace || cd /app || cd /home/gradle && ./gradlew assembleArm64Release --no-daemon" || \
+          docker run --name temp-builder --entrypoint bash cherrygram-env -c "./gradlew assembleArm64Release --no-daemon"
 
       - name: Extract APK from Docker Container
         run: |
           mkdir -p extracted-apk
-          # 3. Container ke andar bani APK ko bahar nikal lo
           docker cp temp-builder:/app/TMessagesProj/build/outputs/apk/arm64/release/ ./extracted-apk/ || \
-          docker cp temp-builder:/workspace/TMessagesProj/build/outputs/apk/arm64/release/ ./extracted-apk/ || true
+          docker cp temp-builder:/workspace/TMessagesProj/build/outputs/apk/arm64/release/ ./extracted-apk/ || \
+          docker cp temp-builder:/home/gradle/TMessagesProj/build/outputs/apk/arm64/release/ ./extracted-apk/ || true
           
           ls -R extracted-apk/
 
