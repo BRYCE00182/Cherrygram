@@ -1,4 +1,4 @@
-name: Build CherryGram Bulletproof
+name: Build CherryGram Final Fix
 
 on:
   workflow_dispatch:
@@ -19,6 +19,14 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
+      - name: Install Stable NDK 25 & Build Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential ninja-build libstdc++6 zlib1g-dev
+          
+          # Install stable NDK 25 which supports CMake 3.22.1 perfectly
+          echo "y" | sudo /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "ndk;25.2.9519653"
+
       - name: Setup API Keys & Config
         run: |
           mkdir -p TMessagesProj/src/main/java/uz/unnarsx/cherrygram
@@ -35,25 +43,14 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Force Override Stubborn CMake
+      - name: Clean Cache and Build with NDK 25
         run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential ninja-build libstdc++6 zlib1g-dev
-
-          echo "Installing CMake 3.30.3 via sdkmanager..."
-          echo "y" | sudo /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "cmake;3.30.3"
-
-          # THE ULTIMATE HACK: Override the stubborn 3.22.1 folder with 3.30.3
-          sudo rm -rf /usr/local/lib/android/sdk/cmake/3.22.1
-          sudo ln -s /usr/local/lib/android/sdk/cmake/3.30.3 /usr/local/lib/android/sdk/cmake/3.22.1
-
-          # Clean cache and build
           rm -rf TMessagesProj/.cxx TMessagesProj/build
           ./gradlew clean --no-daemon
-          ./gradlew assembleAfatDebug --no-daemon
+          ./gradlew assembleAfatDebug -Pandroid.ndkVersion=25.2.9519653 --no-daemon
 
       - name: Extract and Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: CherryGram-Bulletproof-APK
+          name: CherryGram-Final-APK
           path: TMessagesProj/build/outputs/apk/afat/debug/**/*.apk
