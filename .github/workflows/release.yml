@@ -23,7 +23,7 @@ jobs:
         run: |
           sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y build-essential ninja-build libstdc++6 zlib1g-dev lib32stdc++6 libc6-dev-i386 libncurses5
+          sudo apt-get install -y build-essential ninja-build libstdc++6 zlib1g-dev lib32stdc++6 libc6-dev-i386
           echo "y" | sudo /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager \
             "platforms;android-36" \
             "cmake;3.22.1" \
