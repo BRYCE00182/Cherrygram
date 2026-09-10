@@ -1,4 +1,4 @@
-name: Build CherryGram Final Override
+name: Build CherryGram Ultimate Fix
 
 on:
   workflow_dispatch:
@@ -19,17 +19,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Build Tools & Stable NDK 25
+      - name: Install All Dependencies & 32-bit Libs
         run: |
+          sudo dpkg --add-architecture i386
           sudo apt-get update
-          sudo apt-get install -y build-essential ninja-build libstdc++6 zlib1g-dev
+          sudo apt-get install -y build-essential ninja-build libstdc++6 zlib1g-dev lib32stdc++6 lib32z1
           echo "y" | sudo /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "ndk;25.2.9519653" "cmake;3.22.1"
 
-      - name: Patch Project Gradle to Use NDK 25
+      - name: Configure Gradle Properties for NDK 25
         run: |
-          # Replace hardcoded NDK version across all build files
-          find . -name "build.gradle" -o -name "build.gradle.kts" | xargs sed -i 's/27\.2\.12479018/25.2.9519653/g'
-          find . -name "build.gradle" -o -name "build.gradle.kts" | xargs sed -i 's/ndkVersion\s*=\s*".*"/ndkVersion = "25.2.9519653"/g'
+          echo "android.ndkVersion=25.2.9519653" >> gradle.properties
+          echo "android.cmakeVersion=3.22.1" >> gradle.properties
 
       - name: Setup API Keys & Config
         run: |
@@ -47,7 +47,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Clean Cache and Build
+      - name: Clean Cache and Build APK
         run: |
           rm -rf TMessagesProj/.cxx TMessagesProj/build
           ./gradlew clean --no-daemon
