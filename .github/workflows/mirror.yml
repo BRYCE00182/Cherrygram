@@ -29,25 +29,22 @@ jobs:
           sudo rm -rf /usr/share/dotnet/ /usr/local/graalvm/ /usr/local/lib/node_modules
           df -h
 
-      - name: Smart Setup API Keys
+      - name: Create and Setup Extra.kt
         run: |
-          # 1. Poore project mein Extra.kt dhoondho (Bina exact path ke)
-          EXTRA_FILE=$(find . -iname "Extra.kt" | head -n 1)
+          # 1. Exact folder create karega
+          mkdir -p TMessagesProj/src/main/java/uz/unnarsx/cherrygram
           
-          # 2. Agar .example file hui toh usko use kar lo
-          if [ -z "$EXTRA_FILE" ]; then
-            EXAMPLE_FILE=$(find . -iname "Extra.kt.example" | head -n 1)
-            if [ -n "$EXAMPLE_FILE" ]; then
-              EXTRA_FILE="${EXAMPLE_FILE%.example}"
-              cp "$EXAMPLE_FILE" "$EXTRA_FILE"
-            fi
-          fi
+          # 2. Ekdum nayi Extra.kt file banakar usme Kotlin code aur API keys inject karega
+          cat << 'EOF' > TMessagesProj/src/main/java/uz/unnarsx/cherrygram/Extra.kt
+          package uz.unnarsx.cherrygram
+
+          object Extra {
+              const val APP_ID = ${{ secrets.APP_ID }}
+              const val APP_HASH = "${{ secrets.APP_HASH }}"
+          }
+          EOF
           
-          echo "Editing File: $EXTRA_FILE"
-          
-          # 3. Dummy variables ko teri asli API keys se replace karo
-          sed -i 's/APP_ID = 0/APP_ID = ${{ secrets.APP_ID }}/g' "$EXTRA_FILE"
-          sed -i 's/APP_HASH = ""/APP_HASH = "${{ secrets.APP_HASH }}"/g' "$EXTRA_FILE"
+          echo "Extra.kt file successfully created!"
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
