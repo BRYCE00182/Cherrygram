@@ -31,7 +31,7 @@ jobs:
 
       - name: Run Build inside Container
         run: |
-          docker run --name temp-builder -v ${{ github.workspace }}:/project --workdir /project --entrypoint /bin/bash cherrygram-env -c "chmod +x gradlew && ./gradlew assembleArm64Release --no-daemon"
+          docker run --name temp-builder -v ${{ github.workspace }}:/project --workdir /project --entrypoint /bin/bash cherrygram-env -c "git config --global --add safe.directory /project && chmod +x gradlew && ./gradlew assembleArm64Release --no-daemon"
 
       - name: Extract APK from Docker Container
         run: |
