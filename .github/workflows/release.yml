@@ -31,7 +31,7 @@ jobs:
 
       - name: Run Build inside Container
         run: |
-          docker run --name temp-builder -v ${{ github.workspace }}:/project --workdir /project --entrypoint /bin/bash cherrygram-env -c "apt-get update && apt-get install -y build-essential libstdc++6 zlib1g-dev && git config --global --add safe.directory /project && chmod +x gradlew && rm -rf TMessagesProj/.cxx && ./gradlew clean && ./gradlew assembleAfatDebug --no-daemon"
+          docker run --name temp-builder -v ${{ github.workspace }}:/project --workdir /project --entrypoint /bin/bash cherrygram-env -c "export DEBIAN_FRONTEND=noninteractive && apt-get update && apt-get install -y build-essential ninja-build cmake libstdc++6 zlib1g-dev lib32stdc++6 lib32z1 && git config --global --add safe.directory /project && chmod +x gradlew && rm -rf TMessagesProj/.cxx TMessagesProj/build && ./gradlew clean && ./gradlew assembleAfatDebug --no-daemon"
 
       - name: Extract APK from Docker Container
         run: |
