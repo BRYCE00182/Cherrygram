@@ -1,4 +1,4 @@
-name: Build CherryGram Self-Healing
+name: Build CherryGram Bulletproof
 
 on:
   workflow_dispatch:
@@ -35,33 +35,22 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Smart Self-Healing Build Engine
+      - name: Force Override Stubborn CMake
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential ninja-build libstdc++6 zlib1g-dev
 
-          echo "=== ATTEMPT 1: Trying with Latest CMake 3.30.3 ==="
-          echo "y" | sudo /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "cmake;3.30.3" || true
-          
-          if ./gradlew assembleAfatDebug --no-daemon; then
-              echo "Build Successful on Attempt 1!"
-              exit 0
-          fi
+          echo "Installing CMake 3.30.3 via sdkmanager..."
+          echo "y" | sudo /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "cmake;3.30.3"
 
-          echo "=== ATTEMPT 1 FAILED. Switching to Fallback CMake 3.22.1 & Cleaning CXX Cache ==="
+          # THE ULTIMATE HACK: Override the stubborn 3.22.1 folder with 3.30.3
+          sudo rm -rf /usr/local/lib/android/sdk/cmake/3.22.1
+          sudo ln -s /usr/local/lib/android/sdk/cmake/3.30.3 /usr/local/lib/android/sdk/cmake/3.22.1
+
+          # Clean cache and build
           rm -rf TMessagesProj/.cxx TMessagesProj/build
           ./gradlew clean --no-daemon
-
-          echo "y" | sudo /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "cmake;3.22.1" || true
-
-          if ./gradlew assembleAfatDebug --no-daemon; then
-              echo "Build Successful on Attempt 2 (Fallback)!"
-              exit 0
-          fi
-
-          echo "=== ALL ATTEMPTS FAILED. Forcing Gradle Info Mode ==="
-          ./gradlew assembleAfatDebug --info --no-daemon
-          exit 1
+          ./gradlew assembleAfatDebug --no-daemon
 
       - name: Extract and Upload APK
         uses: actions/upload-artifact@v4
