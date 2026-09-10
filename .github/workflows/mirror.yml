@@ -25,7 +25,7 @@ jobs:
       - name: Install Build Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y yasm nasm ninja-build
+          sudo apt-get install -y yasm nasm ninja-build build-essential perl python3 pkg-config libtool gperf libltdl-dev
 
       - name: Prepare Configuration Files
         run: |
@@ -45,7 +45,6 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build Release APK (Universal)
-        # Yeh command saare extra native cxx errors ko skip karke seedha APK nikal degi
         run: ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK
