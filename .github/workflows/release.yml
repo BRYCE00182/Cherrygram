@@ -1,4 +1,4 @@
-name: Build CherryGram Final Fix
+name: Build CherryGram Final Override
 
 on:
   workflow_dispatch:
@@ -19,13 +19,17 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Install Stable NDK 25 & Build Tools
+      - name: Install Build Tools & Stable NDK 25
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential ninja-build libstdc++6 zlib1g-dev
-          
-          # Install stable NDK 25 which supports CMake 3.22.1 perfectly
-          echo "y" | sudo /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "ndk;25.2.9519653"
+          echo "y" | sudo /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager "ndk;25.2.9519653" "cmake;3.22.1"
+
+      - name: Patch Project Gradle to Use NDK 25
+        run: |
+          # Replace hardcoded NDK version across all build files
+          find . -name "build.gradle" -o -name "build.gradle.kts" | xargs sed -i 's/27\.2\.12479018/25.2.9519653/g'
+          find . -name "build.gradle" -o -name "build.gradle.kts" | xargs sed -i 's/ndkVersion\s*=\s*".*"/ndkVersion = "25.2.9519653"/g'
 
       - name: Setup API Keys & Config
         run: |
@@ -43,14 +47,14 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Clean Cache and Build with NDK 25
+      - name: Clean Cache and Build
         run: |
           rm -rf TMessagesProj/.cxx TMessagesProj/build
           ./gradlew clean --no-daemon
-          ./gradlew assembleAfatDebug -Pandroid.ndkVersion=25.2.9519653 --no-daemon
+          ./gradlew assembleAfatDebug --no-daemon
 
       - name: Extract and Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: CherryGram-Final-APK
+          name: CherryGram-Working-APK
           path: TMessagesProj/build/outputs/apk/afat/debug/**/*.apk
