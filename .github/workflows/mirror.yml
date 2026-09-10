@@ -21,6 +21,11 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
+      - name: Install C++ Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y yasm nasm ninja-build ccache golang
+
       - name: Prepare Environment (Free up Space)
         run: |
           sudo apt-get remove -y '^llvm-.*' 'php.*' '^mongodb-.*' '^mysql-.*' azure-cli firefox mono-devel
@@ -31,7 +36,6 @@ jobs:
 
       - name: Prepare Configuration Files
         run: |
-          # 1. Extra.kt (API Keys) File Banao
           mkdir -p TMessagesProj/src/main/java/uz/unnarsx/cherrygram
           cat << 'EOF' > TMessagesProj/src/main/java/uz/unnarsx/cherrygram/Extra.kt
           package uz.unnarsx.cherrygram
@@ -42,16 +46,14 @@ jobs:
           }
           EOF
           
-          # 2. CI Secrets File Copy Karo (Error Fix)
           cp secrets_for_ci.env.example secrets_for_ci.env
-          
           echo "All configuration files setup successfully!"
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       - name: Build Release APK (Standalone)
-        run: ./gradlew :TMessagesProj_AppStandalone:assembleRelease --no-daemon
+        run: ./gradlew :TMessagesProj_AppStandalone:assembleRelease --no-daemon --info
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
