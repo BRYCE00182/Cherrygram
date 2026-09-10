@@ -9,9 +9,10 @@ jobs:
     env:
       ORG_GRADLE_JVMARGS: "-Xmx6g -Xss32m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
         with:
-          submodules: true
+          submodules: recursive  # Yahan recursive karna sabse zaroori tha!
           fetch-depth: 1
 
       - name: Setup Java
@@ -24,7 +25,7 @@ jobs:
       - name: Install C++ Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y yasm nasm ninja-build ccache golang
+          sudo apt-get install -y yasm nasm ninja-build ccache golang autoconf automake libtool pkg-config gperf
 
       - name: Prepare Environment (Free up Space)
         run: |
@@ -53,7 +54,7 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build Release APK (Standalone)
-        run: ./gradlew :TMessagesProj_AppStandalone:assembleRelease --no-daemon --info
+        run: ./gradlew :TMessagesProj_AppStandalone:assembleRelease --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
