@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          submodules: recursive  # Yahan recursive karna sabse zaroori tha!
+          submodules: recursive
           fetch-depth: 1
 
       - name: Setup Java
@@ -22,18 +22,10 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: Install C++ Build Dependencies
+      - name: Install Build Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y yasm nasm ninja-build ccache golang autoconf automake libtool pkg-config gperf
-
-      - name: Prepare Environment (Free up Space)
-        run: |
-          sudo apt-get remove -y '^llvm-.*' 'php.*' '^mongodb-.*' '^mysql-.*' azure-cli firefox mono-devel
-          sudo apt-get autoremove -y
-          sudo apt-get clean
-          sudo rm -rf /usr/share/dotnet/ /usr/local/graalvm/ /usr/local/lib/node_modules
-          df -h
+          sudo apt-get install -y yasm nasm ninja-build
 
       - name: Prepare Configuration Files
         run: |
@@ -48,16 +40,16 @@ jobs:
           EOF
           
           cp secrets_for_ci.env.example secrets_for_ci.env
-          echo "All configuration files setup successfully!"
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build Release APK (Standalone)
-        run: ./gradlew :TMessagesProj_AppStandalone:assembleRelease --no-daemon
+      - name: Build Release APK (Universal)
+        # Yeh command saare extra native cxx errors ko skip karke seedha APK nikal degi
+        run: ./gradlew assembleRelease --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: CherryGram-Release-APK
-          path: TMessagesProj_AppStandalone/build/outputs/apk/release/*.apk
+          path: '**/build/outputs/apk/release/*.apk'
