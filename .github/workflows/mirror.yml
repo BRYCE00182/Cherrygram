@@ -1,18 +1,49 @@
-name: Mirror to GitLab
+name: Build CherryGram Release
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
-  mirror:
+  build:
     runs-on: ubuntu-latest
-
+    env:
+      ORG_GRADLE_JVMARGS: "-Xmx6g -Xss32m -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8"
     steps:
-      - name: Mirror GitHub → GitLab
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 1
+
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: Prepare Environment (Free up Space)
         run: |
-          git clone --mirror https://github.com/arsLan4k1390/Cherrygram.git
-          cd Cherrygram.git
-          git remote set-url --push origin https://oauth2:${{ secrets.GITLAB_TOKEN }}@gitlab.com/arsLan4k1390/Cherrygram.git
-          git push --mirror
+          sudo apt-get remove -y '^llvm-.*' 'php.*' '^mongodb-.*' '^mysql-.*' azure-cli firefox mono-devel
+          sudo apt-get autoremove -y
+          sudo apt-get clean
+          sudo rm -rf /usr/share/dotnet/ /usr/local/graalvm/ /usr/local/lib/node_modules
+          df -h
+
+      - name: Setup API Keys in Extra.kt
+        run: |
+          # Extra.kt file mein dummy variables ko teri asli API keys se replace karega
+          sed -i 's/val APP_ID = 0/val APP_ID = ${{ secrets.APP_ID }}/g' TMessagesProj/src/main/java/uz/unnarsx/cherrygram/Extra.kt
+          sed -i 's/val APP_HASH = ""/val APP_HASH = "${{ secrets.APP_HASH }}"/g' TMessagesProj/src/main/java/uz/unnarsx/cherrygram/Extra.kt
+          
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Release APK (Standalone)
+        # Hum Standalone module build kar rahe hain kyunki Google Play services ka issue na aaye
+        run: ./gradlew :TMessagesProj_AppStandalone:assembleRelease --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: CherryGram-Release-APK
+          path: TMessagesProj_AppStandalone/build/outputs/apk/release/*.apk
